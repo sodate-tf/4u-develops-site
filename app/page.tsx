@@ -1,7 +1,7 @@
 "use client";
 
 import Head from 'next/head';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, JSX } from 'react';
 import Image from 'next/image';
 import {
   Menu,
@@ -12,9 +12,21 @@ import {
   Layers,
   Brain,
   MessageCircle,
-  ComputerIcon,
+  Laptop as ComputerIcon, // Renomeado para evitar conflito de nome, já que o usuário usou ComputerIcon
 } from 'lucide-react';
-import logo from "@/public/logo-4u.png" // O logo é importado como um módulo
+import logo from "@/public/logo-4u.png"
+
+// ================================================================
+// TIPAGEM DE DADOS
+// ================================================================
+
+// Define a interface para os parâmetros do evento do Google Analytics.
+interface GtagEventParams {
+  action: string;
+  category: string;
+  label: string;
+  value?: number; // 'value' é opcional
+}
 
 // Define a interface para o tipo de objeto "dot" usado na animação de fundo.
 interface Dot {
@@ -32,20 +44,58 @@ interface Project {
   screenshots: string[];
 }
 
+// Define a interface para os dados de um item na seção de serviços.
+interface ServiceItem {
+  title: string;
+  desc: string;
+  icon: JSX.Element;
+}
+
+// ================================================================
+// LÓGICA DO GOOGLE ANALYTICS
+// ================================================================
+
+// Objeto mock para a função gtag. Isso é uma boa prática para evitar erros
+// de referência quando o script do GA ainda não foi carregado.
+const gtag = {
+  event: ({ action, category, label, value }: GtagEventParams) => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', action, {
+        event_category: category,
+        event_label: label,
+        value: value,
+      });
+    }
+  },
+};
+
+// ================================================================
+// COMPONENTE PRINCIPAL
+// ================================================================
+
 export default function Home() {
-  // Tipagem do estado para o menu: booleano
+  // Tipagem do estado para o menu: boolean
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   // Tipagem do estado para os pontos: um array de objetos do tipo Dot
   const [dots, setDots] = useState<Dot[]>([]);
   // Tipagem do estado para o texto de digitação
   const [typedText, setTypedText] = useState<string>('');
-  // Tipagem do estado para o modal: booleano
+  // Tipagem do estado para o modal: boolean
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   // Tipagem do estado para o projeto selecionado no modal, pode ser nulo
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
+  // Referências para os elementos a serem animados
+  // Adiciona a tipagem do useRef para HTMLDivElement ou null
+  const animatedRefs = {
+    hero: useRef<HTMLDivElement | null>(null),
+    about: useRef<HTMLDivElement | null>(null),
+    services: useRef<HTMLDivElement | null>(null),
+    portfolio: useRef<HTMLDivElement | null>(null),
+    contact: useRef<HTMLDivElement | null>(null),
+  };
+
   // Dados de exemplo para os projetos do portfólio.
-  // Agora usamos caminhos diretos para as imagens na pasta `public`.
   const projects: Project[] = [
     {
       title: "E-commerce Personalizado",
@@ -58,7 +108,7 @@ export default function Home() {
     },
     {
       title: "Sistema Gerenciador de acampamentos",
-      description: "O Sistema Gerenciador de Acampamentos é uma plataforma digital completa projetada para simplificar e otimizar a administração de acampamentos. Desde a ficha de pré inscrição até o gerenciamento operacional do acmpamento",
+      description: "O Sistema Gerenciador de Acampamentos é uma plataforma digital completa projetada para simplificar e otimizar a administração de acampamentos. Desde a ficha de pré inscrição até o gerenciamento operacional do acampamento",
       mainImage: "/bento-app2.png",
       screenshots: [
         "/bento-app1.png",
@@ -73,7 +123,7 @@ export default function Home() {
         "/tio-ben-app.png",
       ],
     },
-     {
+    {
       title: "Sistema de PDV",
       description: "Sistema de vendas feito com Apps Script utilizando Google Sheets como base. Tornando uma ferramenta de gerenciamento de vendas simples e acessível para pequenos comerciantes. Já integrada com e-mail e geração de relatórios gerenciais",
       mainImage: "/sistema-pdv1.png",
@@ -84,45 +134,72 @@ export default function Home() {
     },
   ];
 
+  // Dados para a seção de serviços com a nova tipagem
+  const serviceItems: ServiceItem[] = [
+    { title: "Desenvolvimento Web", desc: "Sites e plataformas sob medida, com foco em performance e escalabilidade.", icon: <ComputerIcon size={36} /> },
+    { title: "Automação de Processos", desc: "Criamos automações para economizar tempo e reduzir erros, com foco em produtividade.", icon: <Settings size={36} /> },
+    { title: "Soluções Mobile", desc: "Aplicativos híbridos ou nativos que conectam sua empresa com o mundo mobile.", icon: <Smartphone size={36} /> },
+    { title: "E-commerces", desc: "Lojas virtuais completas e integradas para alavancar suas vendas online.", icon: <ShoppingCart size={36} /> },
+    { title: "Planilhas Avançadas", desc: "Soluções inteligentes usando Google Apps Script para automatizar planilhas.", icon: <Layers size={36} /> },
+    { title: "Inteligência Artificial", desc: "Automatizamos decisões com IA personalizada para cada negócio.", icon: <Brain size={36} /> },
+  ];
+
+  // ================================================================
+  // FUNÇÕES DE INTERAÇÃO
+  // ================================================================
+
+  // Função para rastrear o clique no botão do WhatsApp como conversão.
+  const handleWhatsAppClick = (): void => {
+    gtag.event({
+      action: 'whatsapp_click',
+      category: 'Conversão',
+      label: 'Clique no botão WhatsApp',
+    });
+  };
+
   // Função para abrir o modal com os dados do projeto
-  const openModal = (project: Project) => {
+  const openModal = (project: Project): void => {
     setSelectedProject(project);
     setIsModalOpen(true);
+    gtag.event({
+      action: 'abertura_modal_projeto',
+      category: 'Interação',
+      label: `Modal do projeto ${project.title} aberto`,
+    });
   };
 
   // Função para fechar o modal
-  const closeModal = () => {
+  const closeModal = (): void => {
     setIsModalOpen(false);
     setSelectedProject(null);
   };
 
   // Função para rolagem suave via JavaScript
-  // Adiciona a tipagem do evento (MouseEvent) e do targetId (string)
-  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string): void => {
     e.preventDefault();
-    const targetElement = document.getElementById(targetId);
+    const targetElement: HTMLElement | null = document.getElementById(targetId);
     if (targetElement) {
       targetElement.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       });
       setIsMenuOpen(false); // Fecha o menu mobile após o clique
+      gtag.event({
+        action: 'navegacao_menu_smooth_scroll',
+        category: 'Navegação',
+        label: `Clique no link do menu: ${targetId}`,
+      });
     }
   };
 
-  // Referências para os elementos a serem animados
-  // Adiciona a tipagem do useRef para HTMLDivElement ou null
-  const animatedRefs = {
-    hero: useRef<HTMLDivElement | null>(null),
-    about: useRef<HTMLDivElement | null>(null),
-    services: useRef<HTMLDivElement | null>(null),
-    portfolio: useRef<HTMLDivElement | null>(null),
-    contact: useRef<HTMLDivElement | null>(null),
-  };
+  // ================================================================
+  // EFEITOS (useEffects)
+  // ================================================================
 
+  // Efeito para animação de fade-in ao rolar
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
+      (entries: IntersectionObserverEntry[]) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('animate-fadeInUp');
@@ -136,7 +213,6 @@ export default function Home() {
       }
     );
 
-    // Adiciona o observador a cada elemento
     Object.values(animatedRefs).forEach(ref => {
       if (ref.current) {
         observer.observe(ref.current);
@@ -144,27 +220,24 @@ export default function Home() {
     });
 
     return () => {
-      // Limpa os observadores ao desmontar o componente
       Object.values(animatedRefs).forEach(ref => {
         if (ref.current) {
           observer.unobserve(ref.current);
         }
       });
     };
-  }, []);
+  }, [animatedRefs]);
 
   // Efeito para criar e animar os pontos no background
   useEffect(() => {
-    // Configuração do grid de pontos
     const rows = 15;
     const cols = 25;
-    const totalDots = rows * cols;
-    // O array inicial agora é tipado como Dot[]
+    const totalDots: number = rows * cols;
     const initialDots: Dot[] = Array.from({ length: totalDots }, (_, i) => ({
       id: i,
       opacity: 0,
       size: 0,
-      delay: Math.random() * 2000, // Atraso aleatório para animação
+      delay: Math.random() * 2000,
     }));
     setDots(initialDots);
 
@@ -172,61 +245,57 @@ export default function Home() {
       setDots(prevDots =>
         prevDots.map(dot => ({
           ...dot,
-          opacity: Math.random() * 0.5 + 0.1, // Opacidade entre 0.1 e 0.6
-          size: Math.random() * 3 + 1, // Tamanho entre 1px e 4px
+          opacity: Math.random() * 0.5 + 0.1,
+          size: Math.random() * 3 + 1,
         }))
       );
-    }, 1500); // Intervalo de 1.5 segundos para mudar os pontos
+    }, 1500);
 
     return () => clearInterval(interval);
   }, []);
 
   // Efeito para a animação de digitação
   useEffect(() => {
-    const words = ['<code_block>'];
-    let wordIndex = 0;
-    let charIndex = 0;
-    let isDeleting = false;
-
-    // Define a velocidade da digitação
-    const typingSpeed = 150;
-    const deletingSpeed = 100;
-    const pauseTime = 2000; // Tempo de pausa antes de deletar
+    const words: string[] = ['<code_block>'];
+    let wordIndex: number = 0;
+    let charIndex: number = 0;
+    let isDeleting: boolean = false;
+    const typingSpeed: number = 150;
+    const deletingSpeed: number = 100;
+    const pauseTime: number = 2000;
 
     const handleTyping = () => {
-      const currentWord = words[wordIndex];
-      // Se não estiver deletando, adiciona uma letra
+      const currentWord: string = words[wordIndex];
       if (!isDeleting) {
         setTypedText(currentWord.substring(0, charIndex + 1));
         charIndex++;
       } else {
-        // Se estiver deletando, remove uma letra
         setTypedText(currentWord.substring(0, charIndex - 1));
         charIndex--;
       }
 
-      // Muda o estado para deletar se a palavra estiver completa
       if (charIndex === currentWord.length) {
         isDeleting = true;
-        setTimeout(() => handleTyping(), pauseTime); // Pausa antes de deletar
+        setTimeout(handleTyping, pauseTime);
         return;
       }
 
-      // Muda o estado para digitar se a palavra estiver vazia
       if (charIndex < 0) {
         isDeleting = false;
         wordIndex = (wordIndex + 1) % words.length;
         charIndex = 0;
       }
 
-      const speed = isDeleting ? deletingSpeed : typingSpeed;
+      const speed: number = isDeleting ? deletingSpeed : typingSpeed;
       setTimeout(handleTyping, speed);
     };
 
-    // Inicia a animação de digitação
     setTimeout(handleTyping, typingSpeed);
-
   }, []); // O array de dependências vazio garante que o efeito rode apenas uma vez
+
+  // ================================================================
+  // RENDERIZAÇÃO DO COMPONENTE
+  // ================================================================
 
   return (
     <>
@@ -243,6 +312,24 @@ export default function Home() {
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         
+        {/* Script do Google Analytics */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-L2Z1F2X7EF', {
+                page_path: window.location.pathname,
+              });
+            `,
+          }}
+        />
+
         {/* Adiciona CSS para rolagem suave e animações */}
         <style>
           {`
@@ -327,20 +414,43 @@ export default function Home() {
               <Image src={logo} width={32} className='mr-2' alt="4U - Inove. Desenvolva. Evolua." />
               <span className="font-bold text-2xl drop-shadow-[0_0_5px_rgba(0,255,102,0.5)]"> Develops</span>
             </a>
+
             {/* Menu Desktop */}
             <div className="hidden md:flex space-x-6">
               <a href="#sobre" onClick={(e) => handleSmoothScroll(e, 'sobre')} className="hover:text-[#00FF66] transition">Sobre</a>
               <a href="#servicos" onClick={(e) => handleSmoothScroll(e, 'servicos')} className="hover:text-[#00FF66] transition">Serviços</a>
               <a href="#portfolio" onClick={(e) => handleSmoothScroll(e, 'portfolio')} className="hover:text-[#00FF66] transition">Portfólio</a>
               <a href="#contato" onClick={(e) => handleSmoothScroll(e, 'contato')} className="hover:text-[#00FF66] transition">Contato</a>
+              {/* Botão do WhatsApp no menu desktop */}
+              <a
+                href="https://wa.me/5518991631099"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleWhatsAppClick}
+                className="inline-flex items-center space-x-2 bg-green-500 text-white font-bold py-2 px-4 rounded-full transition-colors hover:bg-green-600"
+              >
+                <MessageCircle size={20} />
+                <span>WhatsApp</span>
+              </a>
             </div>
-            {/* Botão do Menu Hamburger Mobile */}
-            <div className="md:hidden">
+
+            {/* Ícone do WhatsApp e Botão do Menu Hamburger Mobile */}
+            <div className="md:hidden flex items-center space-x-4">
+              <a
+                href="https://wa.me/5518991631099"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleWhatsAppClick}
+                className="p-2 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
+              >
+                <MessageCircle className="text-white w-6 h-6" />
+              </a>
               <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-white focus:outline-none">
                 {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
               </button>
             </div>
           </div>
+
           {/* Menu Mobile */}
           {isMenuOpen && (
             <div className="md:hidden bg-gray-900 border-t border-gray-800 mt-4 animate-slide-down">
@@ -352,7 +462,7 @@ export default function Home() {
           )}
         </nav>
 
-        {/* Seção Hero - Layout assimétrico e moderno */}
+        {/* Seção Hero */}
         <section ref={animatedRefs.hero} className="min-h-screen flex items-center bg-black pt-20 animated-element">
           <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 px-6 py-24">
             <div className="flex flex-col justify-center text-left">
@@ -365,7 +475,14 @@ export default function Home() {
               </p>
               <a
                 href="#servicos"
-                onClick={(e) => handleSmoothScroll(e, 'servicos')}
+                onClick={(e) => {
+                  handleSmoothScroll(e, 'servicos');
+                  gtag.event({
+                    action: 'cta_conheca_servicos',
+                    category: 'Interação',
+                    label: 'Clique no botão Conheça nossos serviços',
+                  });
+                }}
                 className="bg-[#00FF66] text-gray-900 py-4 px-10 rounded-full font-bold shadow-xl self-start
                   hover:bg-[#32cd6d] transition-all duration-300 transform hover:scale-105"
               >
@@ -380,7 +497,7 @@ export default function Home() {
                   className="absolute inset-0 bg-gradient-to-br from-[#00FF66]/20 to-[#3B82F6]/20 grid place-items-center"
                   style={{ gridTemplateColumns: 'repeat(25, 1fr)', gridTemplateRows: 'repeat(15, 1fr)' }}
                 >
-                  {dots.map(dot => (
+                  {dots.map((dot) => (
                     <div
                       key={dot.id}
                       className="rounded-full bg-[#00FF66] transition-all duration-1000"
@@ -396,7 +513,6 @@ export default function Home() {
                 <div className="relative text-white z-10 text-center">
                   <span className="text-3xl font-mono text-[#00FF66] animate-fade-in-down">
                     {typedText}
-                    {/* Adiciona um cursor piscando */}
                     <span className="animate-cursor-blink">|</span>
                   </span>
                   <p className="mt-4 text-gray-400">
@@ -408,7 +524,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Seção Sobre Nós - com novo texto que enfatiza a experiência comercial */}
+        {/* Seção Sobre Nós */}
         <section ref={animatedRefs.about} id="sobre" className="bg-gray-950 py-24 px-6 animated-element">
           <div className="max-w-7xl mx-auto text-center rounded-3xl p-12 bg-gray-900 border border-gray-800">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-[#00FF66]">Nossa História e Missão</h2>
@@ -418,23 +534,16 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Seção Serviços - novo layout de grid */}
+        {/* Seção Serviços */}
         <section ref={animatedRefs.services} id="servicos" className="py-24 px-6 bg-black animated-element">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-white">Serviços que Transformam</h2>
             <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
-              {[
-                { title: "Desenvolvimento Web", desc: "Sites e plataformas sob medida, com foco em performance e escalabilidade.", icon: <ComputerIcon size={36} /> },
-                { title: "Automação de Processos", desc: "Criamos automações para economizar tempo e reduzir erros, com foco em produtividade.", icon: <Settings size={36} /> },
-                { title: "Soluções Mobile", desc: "Aplicativos híbridos ou nativos que conectam sua empresa com o mundo mobile.", icon: <Smartphone size={36} /> },
-                { title: "E-commerces", desc: "Lojas virtuais completas e integradas para alavancar suas vendas online.", icon: <ShoppingCart size={36} /> },
-                { title: "Planilhas Avançadas", desc: "Soluções inteligentes usando Google Apps Script para automatizar planilhas.", icon: <Layers size={36} /> },
-                { title: "Inteligência Artificial", desc: "Automatizamos decisões com IA personalizada para cada negócio.", icon: <Brain size={36} /> },
-              ].map((item, idx) => (
+              {serviceItems.map((item: ServiceItem, idx: number) => (
                 <div
                   key={idx}
                   className="bg-gray-900 p-8 rounded-2xl border border-gray-800 relative group
-                               transform transition-all duration-300 hover:scale-105 hover:border-[#3B82F6]"
+                    transform transition-all duration-300 hover:scale-105 hover:border-[#3B82F6]"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#00FF66]/10 via-transparent to-[#3B82F6]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -451,7 +560,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Seção Portfólio - grid minimalista */}
+        {/* Seção Portfólio */}
         <section ref={animatedRefs.portfolio} id="portfolio" className="bg-gray-950 py-24 px-6 animated-element">
           <div className="max-w-7xl mx-auto text-center">
             <h2 className="text-4xl md:text-5xl font-bold mb-10 text-white">Projetos Recentes</h2>
@@ -459,12 +568,12 @@ export default function Home() {
               Veja como nossa paixão por inovação se traduz em resultados reais para nossos clientes.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {projects.map((project, idx) => (
+              {projects.map((project: Project, idx: number) => (
                 <button
                   key={idx}
                   onClick={() => openModal(project)}
                   className="relative group rounded-xl overflow-hidden shadow-2xl border border-gray-800 cursor-pointer
-                               focus:outline-none focus:ring-4 focus:ring-[#00FF66]/50 transition-all duration-300"
+                    focus:outline-none focus:ring-4 focus:ring-[#00FF66]/50 transition-all duration-300"
                 >
                   <Image
                     src={project.mainImage}
@@ -482,7 +591,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Seção Contato - CTA com fundo escuro e detalhes visuais */}
+        {/* Seção Contato */}
         <section ref={animatedRefs.contact} id="contato" className="py-24 px-6 bg-black animated-element">
           <div className="max-w-xl mx-auto text-center border-t border-gray-800 pt-16 relative">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">Vamos Conversar?</h2>
@@ -493,8 +602,9 @@ export default function Home() {
               href="https://wa.me/5518991631099"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleWhatsAppClick}
               className="inline-flex items-center justify-center space-x-2 bg-[#00FF66] text-gray-900 py-4 px-10 rounded-full font-bold shadow-xl
-                               hover:bg-[#32cd6d] transition-all duration-300 transform hover:scale-105 animate-bounce-slow"
+                hover:bg-[#32cd6d] transition-all duration-300 transform hover:scale-105 animate-bounce-slow"
             >
               <MessageCircle size={24} />
               <span>Chamar no WhatsApp</span>
@@ -511,7 +621,6 @@ export default function Home() {
       {/* Componente Modal */}
       {isModalOpen && selectedProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-bg overflow-y-auto">
-          {/* O conteúdo do modal agora tem altura máxima e rolagem própria para evitar cortes */}
           <div className="relative w-full max-w-4xl bg-gray-950 text-white rounded-3xl shadow-2xl p-8 border border-gray-800 modal-content max-h-[90vh] overflow-y-auto">
             <button
               onClick={closeModal}
@@ -524,14 +633,13 @@ export default function Home() {
             </h3>
             <p className="text-gray-300 text-lg mb-6">{selectedProject.description}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-              {selectedProject.screenshots.map((src, idx) => (
+              {selectedProject.screenshots.map((src: string, idx: number) => (
                 <div key={idx} className="relative rounded-xl overflow-hidden border border-gray-800">
-                  {/* Usando o componente Image do Next.js com as imagens reais */}
                   <Image
                     src={src}
                     alt={`${selectedProject.title} screenshot ${idx + 1}`}
-                    width={800} // Ajuste a largura conforme o tamanho das suas imagens
-                    height={600} // Ajuste a altura conforme o tamanho das suas imagens
+                    width={800}
+                    height={600}
                     className="w-full h-full object-cover"
                   />
                 </div>
