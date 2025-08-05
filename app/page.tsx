@@ -1,8 +1,9 @@
 "use client";
 
 import Head from 'next/head';
-import React, { useState, useEffect, useRef, JSX } from 'react';
+import React, { useState, useEffect, useRef, JSX, useMemo } from 'react';
 import Image from 'next/image';
+import Script from 'next/script';
 import {
   Menu,
   X,
@@ -12,8 +13,9 @@ import {
   Layers,
   Brain,
   MessageCircle,
-  Laptop as ComputerIcon, // Renomeado para evitar conflito de nome, já que o usuário usou ComputerIcon
+  Laptop as ComputerIcon,
 } from 'lucide-react';
+// Importação de imagem local
 import logo from "@/public/logo-4u.png"
 
 // ================================================================
@@ -57,9 +59,12 @@ interface ServiceItem {
 
 // Objeto mock para a função gtag. Isso é uma boa prática para evitar erros
 // de referência quando o script do GA ainda não foi carregado.
+// A correção para o erro de tipagem será em um arquivo separado (globals.d.ts)
 const gtag = {
   event: ({ action, category, label, value }: GtagEventParams) => {
-    if (typeof window.gtag === 'function') {
+    // A declaração de tipo abaixo foi movida para globals.d.ts para a correção
+    // `window.gtag` agora é reconhecido pelo TypeScript.
+    if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
       window.gtag('event', action, {
         event_category: category,
         event_label: label,
@@ -85,15 +90,24 @@ export default function Home() {
   // Tipagem do estado para o projeto selecionado no modal, pode ser nulo
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // Referências para os elementos a serem animados
-  // Adiciona a tipagem do useRef para HTMLDivElement ou null
-  const animatedRefs = {
-    hero: useRef<HTMLDivElement | null>(null),
-    about: useRef<HTMLDivElement | null>(null),
-    services: useRef<HTMLDivElement | null>(null),
-    portfolio: useRef<HTMLDivElement | null>(null),
-    contact: useRef<HTMLDivElement | null>(null),
-  };
+  // Referências para os elementos a serem animados.
+  // Usamos useRef para cada ref individual.
+  // A correção do warning do useEffect será feita com useMemo.
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const aboutRef = useRef<HTMLDivElement | null>(null);
+  const servicesRef = useRef<HTMLDivElement | null>(null);
+  const portfolioRef = useRef<HTMLDivElement | null>(null);
+  const contactRef = useRef<HTMLDivElement | null>(null);
+
+  // O objeto animatedRefs agora é memoizado com useMemo para garantir uma
+  // referência estável entre as renderizações, resolvendo o warning do useEffect.
+  const animatedRefs = useMemo(() => ({
+    hero: heroRef,
+    about: aboutRef,
+    services: servicesRef,
+    portfolio: portfolioRef,
+    contact: contactRef,
+  }), [heroRef, aboutRef, servicesRef, portfolioRef, contactRef]);
 
   // Dados de exemplo para os projetos do portfólio.
   const projects: Project[] = [
@@ -226,7 +240,7 @@ export default function Home() {
         }
       });
     };
-  }, [animatedRefs]);
+  }, [animatedRefs]); // Agora a dependência animatedRefs é estável graças ao useMemo
 
   // Efeito para criar e animar os pontos no background
   useEffect(() => {
@@ -311,99 +325,101 @@ export default function Home() {
           content="desenvolvimento de sistemas, desenvolvimento de sites, sistemas acessíveis, sem enrolação, automação, IA, inteligência artificial, e-commerce, 4U Develops"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        
-        {/* Script do Google Analytics */}
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-L2Z1F2X7EF', {
-                page_path: window.location.pathname,
-              });
-            `,
-          }}
-        />
-
-        {/* Adiciona CSS para rolagem suave e animações */}
-        <style>
-          {`
-            html {
-              scroll-behavior: smooth;
-            }
-            .animate-fadeInUp {
-              animation: fadeInUp 0.5s ease-out forwards;
-              animation-fill-mode: both;
-            }
-            .animated-element {
-              opacity: 0;
-            }
-            @keyframes fadeInUp {
-              from {
-                opacity: 0;
-                transform: translateY(20px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-            @keyframes bounce-slow {
-              0%, 100% {
-                transform: translateY(0);
-              }
-              50% {
-                transform: translateY(-5px);
-              }
-            }
-            .animate-bounce-slow {
-              animation: bounce-slow 2s infinite ease-in-out;
-            }
-            @keyframes slide-down {
-              from {
-                opacity: 0;
-                transform: translateY(-20px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-            .animate-slide-down {
-              animation: slide-down 0.3s ease-out forwards;
-            }
-            @keyframes cursor-blink {
-              0%, 100% { opacity: 1; }
-              50% { opacity: 0; }
-            }
-            .animate-cursor-blink {
-              animation: cursor-blink 1s step-end infinite;
-            }
-            .modal-bg {
-              background-color: rgba(0, 0, 0, 0.7);
-              backdrop-filter: blur(8px);
-            }
-            .modal-content {
-              animation: modal-fade-in 0.3s ease-out forwards;
-            }
-            @keyframes modal-fade-in {
-              from {
-                opacity: 0;
-                transform: scale(0.95);
-              }
-              to {
-                opacity: 1;
-                transform: scale(1);
-              }
-            }
-          `}
-        </style>
       </Head>
+
+      {/* Script do Google Analytics: movido do <Head> para aqui e usando o componente <Script> do Next.js.
+          A estratégia `lazyOnload` carrega o script após a página ter sido totalmente carregada.
+          Essa é a maneira recomendada de usar scripts externos para otimizar a performance.
+          Se preferir, o ideal é colocar estes scripts em seu `layout.tsx` para que eles sejam
+          carregados em todas as páginas do seu site. */}
+      <Script
+        strategy="lazyOnload"
+        src={`https://www.googletagmanager.com/gtag/js?id=G-L2Z1F2X7EF`}
+      />
+      <Script id="ga-script" strategy="lazyOnload">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-L2Z1F2X7EF', {
+            page_path: window.location.pathname,
+          });
+        `}
+      </Script>
+
+      <style jsx global>
+        {`
+          /* Adiciona CSS para rolagem suave e animações de forma global */
+          html {
+            scroll-behavior: smooth;
+          }
+          .animate-fadeInUp {
+            animation: fadeInUp 0.5s ease-out forwards;
+            animation-fill-mode: both;
+          }
+          .animated-element {
+            opacity: 0;
+          }
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          @keyframes bounce-slow {
+            0%, 100% {
+              transform: translateY(0);
+            }
+            50% {
+              transform: translateY(-5px);
+            }
+          }
+          .animate-bounce-slow {
+            animation: bounce-slow 2s infinite ease-in-out;
+          }
+          @keyframes slide-down {
+            from {
+              opacity: 0;
+              transform: translateY(-20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .animate-slide-down {
+            animation: slide-down 0.3s ease-out forwards;
+          }
+          @keyframes cursor-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+          }
+          .animate-cursor-blink {
+            animation: cursor-blink 1s step-end infinite;
+          }
+          .modal-bg {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+          }
+          .modal-content {
+            animation: modal-fade-in 0.3s ease-out forwards;
+          }
+          @keyframes modal-fade-in {
+            from {
+              opacity: 0;
+              transform: scale(0.95);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+        `}
+      </style>
 
       <main className="bg-gray-950 text-white font-sans overflow-x-hidden">
         {/* Navbar */}
@@ -625,6 +641,7 @@ export default function Home() {
             <button
               onClick={closeModal}
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition"
+              aria-label="Fechar modal"
             >
               <X size={28} />
             </button>
