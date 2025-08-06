@@ -450,7 +450,7 @@ export default function Home() {
                 className="inline-flex items-center space-x-2 bg-green-500 text-white font-bold py-2 px-4 rounded-full transition-colors hover:bg-green-600"
               >
                 <MessageCircle size={20} />
-                <span>WhatsApp</span>
+                <span></span>
               </a>
             </div>
 
