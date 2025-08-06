@@ -318,17 +318,85 @@ export default function Home() {
   return (
     <>
       <Head>
-        {/* Título e meta tags otimizadas para SEO */}
+        {/*
+          =======================================================
+          META TAGS OTIMIZADAS PARA SEO E COMPARTILHAMENTO
+          =======================================================
+        */}
+
+        {/* Título da página que aparece no navegador e em resultados de busca */}
         <title>4U Develops | Inove. Desenvolva. Evolua.</title>
+        
+        {/* Descrição da página para resultados de busca. Deve ser atraente. */}
         <meta
           name="description"
-          content="Desenvolvimento de sistemas e sites acessíveis e sem enrolação. Soluções práticas e úteis que realmente vendem. Inove, Desenvolva, Evolua."
+          content="Desenvolvimento de sistemas e sites acessíveis e com bom custo-benefício. Soluções de tecnologia práticas, rápidas e que geram resultados para o seu negócio. Inove. Desenvolva. Evolua."
         />
+
+        {/* Palavras-chave relevantes para o conteúdo. Elas ajudam os motores de busca a entender o tema da página. */}
         <meta
           name="keywords"
-          content="desenvolvimento de sistemas, desenvolvimento de sites, sistemas acessíveis, sem enrolação, automação, IA, inteligência artificial, e-commerce, 4U Develops"
+          content="sites baratos, desenvolvimento de sistemas em presidente prudente, programadores presidente prudente, empresa de tecnologia acessível, desenvolvimento web, sites profissionais, automação, IA, e-commerce, 4U Develops"
         />
+
+        {/* Tag de viewport para garantir que o site seja responsivo em dispositivos móveis */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        {/*
+          =======================================================
+          TAGS OPEN GRAPH PARA COMPARTILHAMENTO (FACEBOOK, WHATSAPP, LINKEDIN)
+          =======================================================
+        */}
+
+        {/* Título do link compartilhado */}
+        <meta property="og:title" content="4U Develops | Desenvolvimento de Sistemas e Sites | Inove. Desenvolva. Evolua." />
+        
+        {/* Descrição do link compartilhado */}
+        <meta property="og:description" content="Soluções de tecnologia acessíveis e que geram resultados para o seu negócio. Conheça a 4U Develops. Inove. Desenvolva. Evolua." />
+        
+        {/* URL da imagem que aparecerá como thumbnail (pré-visualização) */}
+        {/* Substitua 'URL_DA_SUA_IMAGEM_DE_THUMBNAIL' pela URL da sua imagem (Ex: https://seusite.com/images/thumb.jpg) */}
+        <meta property="og:image" content="URL_DA_SUA_IMAGEM_DE_THUMBNAIL" />
+        
+        {/* URL canônica do seu site */}
+        <meta property="og:url" content="https://4udevelops.com.br/thumb-4u-develops.png" />
+        
+        {/* Tipo de conteúdo (website, article, etc.) */}
+        <meta property="og:type" content="website" />
+
+        {/*
+          =======================================================
+          TAGS TWITTER CARD PARA COMPARTILHAMENTO NO TWITTER
+          =======================================================
+        */}
+        
+        {/* Tipo de card do Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        
+        {/* Título do link no Twitter */}
+        <meta name="twitter:title" content="4U Develops | Soluções de Tecnologia Acessíveis | Inove. Desenvolva. Evolua." />
+        
+        {/* Descrição do link no Twitter */}
+        <meta name="twitter:description" content="Desenvolvimento de sistemas e sites com foco em resultados para sua empresa." />
+        
+        {/* URL da imagem do card no Twitter */}
+        <meta name="twitter:image" content="https://4udevelops.com.br/thumb-4u-develops.png" />
+
+        {/*
+          =======================================================
+          META TAGS PARA SEO LOCAL (OPCIONAL, MAS RECOMENDADO)
+          =======================================================
+        */}
+        
+        {/* Região e cidade para buscas locais */}
+        <meta name="geo.region" content="BR-SP" />
+        <meta name="geo.placename" content="Presidente Prudente" />
+        
+        {/*
+          =======================================================
+          FIM DAS META TAGS
+          =======================================================
+        */}
       </Head>
 
       {/* Script do Google Analytics: movido do <Head> para aqui e usando o componente <Script> do Next.js.
