@@ -57,22 +57,26 @@ interface ServiceItem {
 // LÓGICA DO GOOGLE ANALYTICS
 // ================================================================
 
-// Objeto mock para a função gtag. Isso é uma boa prática para evitar erros
-// de referência quando o script do GA ainda não foi carregado.
-// A correção para o erro de tipagem será em um arquivo separado (globals.d.ts)
+// Objeto mock para a função gtag, com a correção de tipagem.
+// A interface GtagEventParams já está definida, vamos usá-la aqui.
 const gtag = {
-  event: ({ action, category, label, value }: GtagEventParams) => {
-    // A declaração de tipo abaixo foi movida para globals.d.ts para a correção
-    // `window.gtag` agora é reconhecido pelo TypeScript.
+  event: (params: GtagEventParams) => {
     if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
-      window.gtag('event', action, {
-        event_category: category,
-        event_label: label,
-        value: value,
-      });
+      // O problema é que a interface GtagEventParams tem 'category' e 'label',
+      // mas o gtag do GA espera 'event_category' e 'event_label'.
+      // Precisamos fazer essa tradução.
+      const gtagEventData = {
+        event_category: params.category,
+        event_label: params.label,
+        value: params.value,
+      };
+      
+      // A tipagem do `window.gtag` em seu `global.d.ts` agora deve estar correta.
+      window.gtag("event", params.action, gtagEventData);
     }
   },
 };
+
 
 // ================================================================
 // COMPONENTE PRINCIPAL
@@ -288,7 +292,7 @@ export default function Home() {
         charIndex--;
       }
 
-      if (charIndex === currentWord.length) {
+      if (charIndex === currentWord.length + 1) {
         isDeleting = true;
         setTimeout(handleTyping, pauseTime);
         return;
@@ -328,97 +332,97 @@ export default function Home() {
       </Head>
 
       {/* Script do Google Analytics: movido do <Head> para aqui e usando o componente <Script> do Next.js.
-          A estratégia `lazyOnload` carrega o script após a página ter sido totalmente carregada.
-          Essa é a maneira recomendada de usar scripts externos para otimizar a performance.
-          Se preferir, o ideal é colocar estes scripts em seu `layout.tsx` para que eles sejam
-          carregados em todas as páginas do seu site. */}
+           A estratégia `lazyOnload` carrega o script após a página ter sido totalmente carregada.
+           Essa é a maneira recomendada de usar scripts externos para otimizar a performance.
+           Se preferir, o ideal é colocar estes scripts em seu `layout.tsx` para que eles sejam
+           carregados em todas as páginas do seu site. */}
       <Script
         strategy="lazyOnload"
         src={`https://www.googletagmanager.com/gtag/js?id=G-L2Z1F2X7EF`}
       />
       <Script id="ga-script" strategy="lazyOnload">
         {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-L2Z1F2X7EF', {
-            page_path: window.location.pathname,
-          });
-        `}
+           window.dataLayer = window.dataLayer || [];
+           function gtag(){dataLayer.push(arguments);}
+           gtag('js', new Date());
+           gtag('config', 'G-L2Z1F2X7EF', {
+             page_path: window.location.pathname,
+           });
+         `}
       </Script>
 
       <style jsx global>
         {`
-          /* Adiciona CSS para rolagem suave e animações de forma global */
-          html {
-            scroll-behavior: smooth;
-          }
-          .animate-fadeInUp {
-            animation: fadeInUp 0.5s ease-out forwards;
-            animation-fill-mode: both;
-          }
-          .animated-element {
-            opacity: 0;
-          }
-          @keyframes fadeInUp {
-            from {
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          @keyframes bounce-slow {
-            0%, 100% {
-              transform: translateY(0);
-            }
-            50% {
-              transform: translateY(-5px);
-            }
-          }
-          .animate-bounce-slow {
-            animation: bounce-slow 2s infinite ease-in-out;
-          }
-          @keyframes slide-down {
-            from {
-              opacity: 0;
-              transform: translateY(-20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          .animate-slide-down {
-            animation: slide-down 0.3s ease-out forwards;
-          }
-          @keyframes cursor-blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-          }
-          .animate-cursor-blink {
-            animation: cursor-blink 1s step-end infinite;
-          }
-          .modal-bg {
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(8px);
-          }
-          .modal-content {
-            animation: modal-fade-in 0.3s ease-out forwards;
-          }
-          @keyframes modal-fade-in {
-            from {
-              opacity: 0;
-              transform: scale(0.95);
-            }
-            to {
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-        `}
+           /* Adiciona CSS para rolagem suave e animações de forma global */
+           html {
+             scroll-behavior: smooth;
+           }
+           .animate-fadeInUp {
+             animation: fadeInUp 0.5s ease-out forwards;
+             animation-fill-mode: both;
+           }
+           .animated-element {
+             opacity: 0;
+           }
+           @keyframes fadeInUp {
+             from {
+               opacity: 0;
+               transform: translateY(20px);
+             }
+             to {
+               opacity: 1;
+               transform: translateY(0);
+             }
+           }
+           @keyframes bounce-slow {
+             0%, 100% {
+               transform: translateY(0);
+             }
+             50% {
+               transform: translateY(-5px);
+             }
+           }
+           .animate-bounce-slow {
+             animation: bounce-slow 2s infinite ease-in-out;
+           }
+           @keyframes slide-down {
+             from {
+               opacity: 0;
+               transform: translateY(-20px);
+             }
+             to {
+               opacity: 1;
+               transform: translateY(0);
+             }
+           }
+           .animate-slide-down {
+             animation: slide-down 0.3s ease-out forwards;
+           }
+           @keyframes cursor-blink {
+             0%, 100% { opacity: 1; }
+             50% { opacity: 0; }
+           }
+           .animate-cursor-blink {
+             animation: cursor-blink 1s step-end infinite;
+           }
+           .modal-bg {
+             background-color: rgba(0, 0, 0, 0.7);
+             backdrop-filter: blur(8px);
+           }
+           .modal-content {
+             animation: modal-fade-in 0.3s ease-out forwards;
+           }
+           @keyframes modal-fade-in {
+             from {
+               opacity: 0;
+               transform: scale(0.95);
+             }
+             to {
+               opacity: 1;
+               transform: scale(1);
+             }
+           }
+         `}
       </style>
 
       <main className="bg-gray-950 text-white font-sans overflow-x-hidden">
@@ -499,8 +503,7 @@ export default function Home() {
                     label: 'Clique no botão Conheça nossos serviços',
                   });
                 }}
-                className="bg-[#00FF66] text-gray-900 py-4 px-10 rounded-full font-bold shadow-xl self-start
-                  hover:bg-[#32cd6d] transition-all duration-300 transform hover:scale-105"
+                className="bg-[#00FF66] text-gray-900 py-4 px-10 rounded-full font-bold shadow-xl self-start hover:bg-[#32cd6d] transition-all duration-300 transform hover:scale-105"
               >
                 Conheça nossos serviços
               </a>
@@ -558,8 +561,7 @@ export default function Home() {
               {serviceItems.map((item: ServiceItem, idx: number) => (
                 <div
                   key={idx}
-                  className="bg-gray-900 p-8 rounded-2xl border border-gray-800 relative group
-                    transform transition-all duration-300 hover:scale-105 hover:border-[#3B82F6]"
+                  className="bg-gray-900 p-8 rounded-2xl border border-gray-800 relative group transform transition-all duration-300 hover:scale-105 hover:border-[#3B82F6]"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#00FF66]/10 via-transparent to-[#3B82F6]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -588,8 +590,7 @@ export default function Home() {
                 <button
                   key={idx}
                   onClick={() => openModal(project)}
-                  className="relative group rounded-xl overflow-hidden shadow-2xl border border-gray-800 cursor-pointer
-                    focus:outline-none focus:ring-4 focus:ring-[#00FF66]/50 transition-all duration-300"
+                  className="relative group rounded-xl overflow-hidden shadow-2xl border border-gray-800 cursor-pointer focus:outline-none focus:ring-4 focus:ring-[#00FF66]/50 transition-all duration-300"
                 >
                   <Image
                     src={project.mainImage}
@@ -619,8 +620,7 @@ export default function Home() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleWhatsAppClick}
-              className="inline-flex items-center justify-center space-x-2 bg-[#00FF66] text-gray-900 py-4 px-10 rounded-full font-bold shadow-xl
-                hover:bg-[#32cd6d] transition-all duration-300 transform hover:scale-105 animate-bounce-slow"
+              className="inline-flex items-center justify-center space-x-2 bg-[#00FF66] text-gray-900 py-4 px-10 rounded-full font-bold shadow-xl hover:bg-[#32cd6d] transition-all duration-300 transform hover:scale-105 animate-bounce-slow"
             >
               <MessageCircle size={24} />
               <span>Chamar no WhatsApp</span>

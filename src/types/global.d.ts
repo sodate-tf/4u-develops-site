@@ -1,13 +1,37 @@
-// src/types/globals.d.ts
-// Este arquivo estende a interface Window para incluir a função gtag.
+// src/types/global.d.ts
 
+// Define a interface para os parâmetros do comando 'config'
+interface GtagConfigParams {
+  page_path: string;
+}
+
+// Define a interface para os parâmetros do comando 'event'
 interface GtagEventParams {
-    action: string;
-    category: string;
-    label: string;
-    value?: number;
+  event_category: string;
+  event_label?: string;
+  value?: number;
 }
 
-interface Window {
-    gtag: (command: 'config' | 'event', targetId: string, params?: Record<string, any> | GtagEventParams) => void;
+// Estende a interface global Window para incluir a função gtag
+declare global {
+  interface Window {
+    
+    // Sobrecarga 2: Assinatura para o comando 'event'
+    gtag: (
+      command: 'event',
+      action: string,
+      params: GtagEventParams
+    ) => void;
+    
+    // Sobrecarga 1: Assinatura para o comando 'config'
+    gtag: (
+      command: 'config',
+      targetId: string,
+      params: GtagConfigParams
+    ) => void;
+
+  }
 }
+
+// Isso é necessário para que o TypeScript trate este arquivo como um módulo
+export {};
